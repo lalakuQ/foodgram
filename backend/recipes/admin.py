@@ -14,17 +14,14 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Follower)
 class FollowerAdmin(admin.ModelAdmin):
     list_display = (
-        'user.first_name',
-        'user.last_name',
-        'following.first_name',
-        'following.last_name'
+        'user',
     )
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = (
-        'name'
+        'name',
     )
 
 

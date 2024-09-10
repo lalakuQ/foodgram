@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-5-c0@j5xg0scrfge3t)1a+i)_y1e-edx5#_rs0=zjkkmg-^vo%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', 'localhost', '0.0.0.0']
 
 
 # Application definition
@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'api.apps.ApiConfig',
+    'recipes.apps.RecipesConfig'
 ]
 
 MIDDLEWARE = [
@@ -77,10 +80,10 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'foodgram'),
-        'USER': os.getenv('POSTGRES_USER', 'admin'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'admin'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'NAME': os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'mysecretpassword'),
+        'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', 5432)
     }
 }
@@ -124,7 +127,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATIC_ROOT = BASE_DIR / 'collected_static'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AUTH_USER_MODEL = 'recipes.User'
