@@ -9,3 +9,4 @@ django_debug_toolbar==3.8.1
 black==23.12.1
 isort==5.13.2
 pandas==2.2.2
+psycopg2-binary==2.9.3 

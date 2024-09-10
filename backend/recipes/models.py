@@ -10,6 +10,7 @@ class User(AbstractUser):
     avatar = models.ImageField()
     bookmarked_recipes = models.ManyToManyField('Recipe',
                                                 related_name='users')
+    shopping_recipes = models.ManyToManyField('Recipe')
 
 
 class Follower(models.Model):
@@ -53,3 +54,4 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(unique=True)
     unit = models.CharField()
+
