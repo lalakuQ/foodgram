@@ -22,12 +22,9 @@ class User(AbstractUser):
                                 unique=True)
     first_name = models.CharField(max_length=MAX_LENGTH_FIRST_NAME)
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
-    role = models.CharField(
-        max_length=MAX_LENGTH_ROLE,
-        choices=ROLE_CHOICES,
-        default=USER,)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     avatar = models.ImageField()
+    is_subscribed = models.BooleanField(default=False)
     bookmarked_recipes = models.ManyToManyField('Recipe', related_name='users')
     shopping_recipes = models.ManyToManyField('Recipe',)
 
