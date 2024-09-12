@@ -7,6 +7,7 @@ from djoser import views as djoser_views
 from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,12 +15,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from recipes.models import User, Follower, Ingredient, Recipe
 from djoser.views import TokenCreateView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from .serializers import UserSerializer
 from .pagination import UserPagination
+import base64
 
+from django.core.files.base import ContentFile
 
 class CustomTokenView(TokenCreateView):
     def post(self, request, **kwargs):
@@ -45,27 +49,31 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = UserPagination
+    permission_classes = [AllowAny]
 
-    
-        
-    '''@action(
-        methods=['GET', 'PATCH'],
-        detail=False,
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        url_path='me/avatar',
         permission_classes=(IsAuthenticated,),
-        url_path='me',
     )
-    def get_current_user_info(self, request):
-        serializer = UsersSerializer(request.user)
-        if request.method == 'GET':
-            return Response(serializer.data)
-        serializer = self.get_serializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save(role=request.user.role)
-        return Response(serializer.data, status=status.HTTP_200_OK)'''
+    def manage_avatar(self, request):
+        user = request.user
+        if request.method == 'DELETE':
+            user.avatar.delete()
+            return Response('Аватар успешно удален',
+                            status=status.HTTP_204_NO_CONTENT)
+        avatar_data = request.data.get('avatar')
+        if not avatar_data:
+            return Response({'avatar': 'Обязательное поле.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        format, imgstr = avatar_data.split(';base64,')
+        ext = format.split('/')[-1]
+        file_name = f'avatar_{user.id}.{ext}'
+        file_content = ContentFile(base64.b64decode(imgstr), name=file_name)
+        user.avatar.save(file_name, file_content, save=True)
+        avatar_url = request.build_absolute_uri(user.avatar.url)
+        return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
 
 '''class CommentViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с комментариями."""
