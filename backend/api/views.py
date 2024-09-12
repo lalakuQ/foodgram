@@ -1,6 +1,7 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Avg
 from django.forms import ValidationError
+from django.db.models import Value, IntegerField
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser import views as djoser_views
 from rest_framework import status, viewsets, mixins
@@ -17,6 +18,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from .serializers import UserSerializer
+from .pagination import UserPagination
 
 
 class CustomTokenView(TokenCreateView):
@@ -31,17 +33,21 @@ class CustomTokenView(TokenCreateView):
 
                 return Response({'auth_token': str(token)},
                                 status=status.HTTP_200_OK)
-            return Response('Неверный данные',
+            return Response('Неверные данные',
                             status=status.HTTP_401_UNAUTHORIZED)
         return Response('Требуются пароль и почта',
                         status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с пользователями."""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = UserPagination
 
+    
+        
     '''@action(
         methods=['GET', 'PATCH'],
         detail=False,

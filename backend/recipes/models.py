@@ -29,6 +29,7 @@ class User(AbstractUser):
     shopping_recipes = models.ManyToManyField('Recipe',)
 
 
+
 class Follower(models.Model):
     user = models.ForeignKey(User,
                              related_name='following',
