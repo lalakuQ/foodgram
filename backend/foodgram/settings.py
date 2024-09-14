@@ -142,14 +142,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-
-    'PAGE_SIZE': 10,
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
 }
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'api.backends.EmailBackend']
+    'api.backends.EmailBackend'
+]
 
 
 STATIC_URL = '/static/'

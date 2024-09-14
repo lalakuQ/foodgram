@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Follower, Ingredient, Recipe, Tag, User
+from .models import Follower, Ingredient, Recipe, Tag, User, RecipeIngredient, Unit
 
 
 @admin.register(User)
@@ -22,14 +22,7 @@ class FollowerAdmin(admin.ModelAdmin):
 class IngredientAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-    )
-
-
-@admin.register(Recipe)
-class RecipeAdmin(admin.ModelAdmin):
-    list_display = (
-        'author',
-        'name'
+        'unit',
     )
 
 
@@ -39,3 +32,22 @@ class TagAdmin(admin.ModelAdmin):
         'name',
         'slug',
     )
+
+
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+    )
+
+
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    extra = 1
+
+
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
+    inlines = [RecipeIngredientInline]
+    list_display = ('name', 'author', 'prep_time')
+    search_fields = ('name', 'author__username', 'author__email')

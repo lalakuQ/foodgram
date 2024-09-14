@@ -12,18 +12,20 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from recipes.models import User, Follower, Ingredient, Recipe
+from recipes.models import User, Follower, Ingredient, Recipe, Tag
 from djoser.views import TokenCreateView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from .serializers import UserSerializer
-from .pagination import UserPagination
+from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer
+from .pagination import CustomPagination
+from .permissions import IsAuthenticatedOrGetOnly
 import base64
 
 from django.core.files.base import ContentFile
+
 
 class CustomTokenView(TokenCreateView):
     def post(self, request, **kwargs):
@@ -44,11 +46,10 @@ class CustomTokenView(TokenCreateView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с пользователями."""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = UserPagination
+    pagination_class = CustomPagination
     permission_classes = [AllowAny]
 
     @action(
@@ -75,23 +76,23 @@ class UserViewSet(viewsets.ModelViewSet):
         avatar_url = request.build_absolute_uri(user.avatar.url)
         return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
 
-'''class CommentViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с комментариями."""
 
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedAuthorAdminModerOrReadOnly,)
-    http_method_names = ['get', 'post', 'patch', 'delete']
+class RecipesViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    pagination_class = CustomPagination
+    permission_classes = [IsAuthenticatedOrGetOnly,]
 
-    def get_review(self):
-        title_id = self.kwargs.get('title_id')
-        review_id = self.kwargs.get('reviews_id')
-        return get_object_or_404(Review, id=review_id, title_id=title_id)
 
-    def get_queryset(self):
-        review = self.get_review()
-        return review.comments.all()
+class TagViewSet(viewsets.GenericViewSet,
+                 mixins.ListModelMixin,
+                 mixins.RetrieveModelMixin,):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
-    def perform_create(self, serializer):
-        review = self.get_review()
-        serializer.save(author=self.request.user, review=review)'''
+
+class IngredientViewSet(viewsets.GenericViewSet,
+                        mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer

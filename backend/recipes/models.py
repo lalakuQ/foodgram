@@ -8,14 +8,6 @@ from .constants import (MAX_LENGTH_EMAIL,
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-USER = 'user'
-ADMIN = 'admin'
-
-ROLE_CHOICES = [
-    (USER, USER),
-    (ADMIN, ADMIN),
-]
-
 
 class User(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_USERNAME,
@@ -51,6 +43,20 @@ class Follower(models.Model):
         ]
 
 
+class Tag(models.Model):
+    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
+    slug = models.SlugField(unique=True, max_length=MAX_LENGTH_SLUG)
+
+
+class Ingredient(models.Model):
+    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
+    unit = models.ForeignKey('Unit', null=True, on_delete=models.SET_NULL)
+
+
+class Unit(models.Model):
+    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
+
+
 class Recipe(models.Model):
     author = models.ForeignKey(User,
                                related_name='recipes',
@@ -59,21 +65,17 @@ class Recipe(models.Model):
     image = models.ImageField()
     description = models.TextField()
     ingredients = models.ManyToManyField(
-        'Ingredient',
-        related_name='recipes'
+        Ingredient,
+        through='RecipeIngredient'
     )
     tag = models.ManyToManyField(
-        'Tag',
+        Tag,
         related_name='recipes',
     )
     prep_time = models.IntegerField()
 
 
-class Tag(models.Model):
-    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
-    slug = models.SlugField(unique=True, max_length=MAX_LENGTH_SLUG)
-
-
-class Ingredient(models.Model):
-    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
-    unit = models.CharField(max_length=MAX_LENGTH_NAME)
+class RecipeIngredient(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=5, decimal_places=2)

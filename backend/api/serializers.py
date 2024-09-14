@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from recipes.models import User, Follower, Ingredient, Recipe, Tag
+from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient
 from recipes.constants import MAX_LENGTH_USERNAME, MAX_LENGTH_EMAIL
 
 
@@ -50,3 +50,48 @@ class UserSerializer(serializers.ModelSerializer):
             'is_subscribed',
             'password',
             'avatar']
+
+
+class UnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Unit
+        fields = '__all__'
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    unit = UnitSerializer()
+
+    class Meta:
+        model = Ingredient
+        fields = [
+            'id',
+            'name',
+            'unit'
+        ]
+
+
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    ingredient = IngredientSerializer()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = [
+            'ingredient',
+            'amount'
+        ]
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    ingredients = RecipeIngredientSerializer(many=True)
+    tag = TagSerializer(many=True)
+    author = UserSerializer()
+
+    class Meta:
+        model = Recipe
+        fields = '__all__'
