@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from recipes.models import User, Follower, Ingredient, Recipe, Tag
+from .filters import RecipeFilter
 from djoser.views import TokenCreateView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -82,7 +83,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticatedOrGetOnly,]
-
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RecipeFilter
+    
 
 class TagViewSet(viewsets.GenericViewSet,
                  mixins.ListModelMixin,

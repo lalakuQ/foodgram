@@ -4,10 +4,12 @@ from .constants import (MAX_LENGTH_EMAIL,
                         MAX_LENGTH_NAME,
                         MAX_LENGTH_ROLE,
                         MAX_LENGTH_SLUG,
-                        MAX_LENGTH_USERNAME)
+                        MAX_LENGTH_USERNAME,
+                        MIN_VALUE_COOKING_TIME)
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from rest_framework import validators
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class User(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_USERNAME,
@@ -72,8 +74,10 @@ class Recipe(models.Model):
         Tag,
         related_name='recipes',
     )
-    cooking_time = models.IntegerField()
-    is_favouried = models.BooleanField()
+    cooking_time = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)]
+    )
+    is_favorited = models.BooleanField()
     is_in_shopping_cart = models.BooleanField()
 
 
