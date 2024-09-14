@@ -63,16 +63,18 @@ class Recipe(models.Model):
                                on_delete=models.CASCADE)
     name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
     image = models.ImageField()
-    description = models.TextField()
+    text = models.TextField()
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient'
     )
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
     )
-    prep_time = models.IntegerField()
+    cooking_time = models.IntegerField()
+    is_favouried = models.BooleanField()
+    is_in_shopping_cart = models.BooleanField()
 
 
 class RecipeIngredient(models.Model):

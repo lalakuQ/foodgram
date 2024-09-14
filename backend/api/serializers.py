@@ -52,26 +52,21 @@ class UserSerializer(serializers.ModelSerializer):
             'avatar']
 
 
-class UnitSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Unit
-        fields = '__all__'
-
-
 class IngredientSerializer(serializers.ModelSerializer):
-    unit = UnitSerializer()
+    measurement_unit = serializers.CharField(source='unit.name')
 
     class Meta:
         model = Ingredient
         fields = [
             'id',
             'name',
-            'unit'
+            'measurement_unit'
         ]
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     ingredient = IngredientSerializer()
+    amount = serializers.DecimalField(max_digits=5, decimal_places=2)
 
     class Meta:
         model = RecipeIngredient
@@ -79,6 +74,14 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
             'ingredient',
             'amount'
         ]
+
+    def to_representation(self, instance):
+        return {
+            'id': instance.ingredient.id,
+            'name': instance.ingredient.name,
+            'measurement_unit': instance.ingredient.unit.name,
+            'amount': str(instance.amount)
+        }
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -88,8 +91,9 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    ingredients = RecipeIngredientSerializer(many=True)
-    tag = TagSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(source='recipeingredient_set',
+                                             many=True)
+    tags = TagSerializer(many=True)
     author = UserSerializer()
 
     class Meta:
