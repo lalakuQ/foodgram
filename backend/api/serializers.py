@@ -4,8 +4,7 @@ from rest_framework.validators import UniqueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient
 from recipes.constants import MAX_LENGTH_USERNAME, MAX_LENGTH_EMAIL
-from .utils import decode_img
-
+from .utils import decode_img, create_recipe_ingredients
 class UserSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(
@@ -110,15 +109,31 @@ class RecipePostSerializer(serializers.ModelSerializer):
         file_name, file_content = decode_img(img_data, user)
         recipe.image.save(file_name, file_content, save=True)
         recipe.tags.add(*tags)
-        recipes_ingredients = [RecipeIngredient(
-            ingredient=ingredient['id'],
-            amount=ingredient['amount'],
-            recipe=recipe) for ingredient in ingredients]
-        RecipeIngredient.objects.bulk_create(
-            recipes_ingredients
-        )
+        create_recipe_ingredients(recipe, ingredients)
 
         return recipe
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get('cooking_time',
+                                                   instance.cooking_time)
+
+        img_data = validated_data.get('image')
+        if img_data:
+            user = self.context['request'].user
+            file_name, file_content = decode_img(img_data, user)
+            instance.image.save(file_name, file_content, save=True)
+
+        tags = validated_data.get('tags', [])
+        instance.tags.set(tags)
+
+        ingredients = validated_data.get('recipeingredient_set', [])
+        instance.recipeingredient_set.all().delete()
+        create_recipe_ingredients(instance, ingredients)
+
+        instance.save()
+        return instance
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

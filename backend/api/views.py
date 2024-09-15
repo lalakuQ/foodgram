@@ -23,7 +23,7 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer
 from .pagination import CustomPagination
-from .permissions import IsAuthenticatedOrGetOnly
+from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 import base64
 from .utils import decode_img
 from django.core.files.base import ContentFile
@@ -83,12 +83,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = CustomPagination
-    permission_classes = [IsAuthenticatedOrGetOnly,]
+    permission_classes = [IsAuthenticatedAuthorSuperuserOrReadOnly,]
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request.method in ['POST', 'PATCH']:
             return RecipePostSerializer
         return RecipeSerializer
 
