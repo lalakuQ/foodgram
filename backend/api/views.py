@@ -4,6 +4,7 @@ from django.forms import ValidationError
 from django.db.models import Value, IntegerField
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser import views as djoser_views
+from djoser import utils
 from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -14,21 +15,22 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from recipes.models import User, Follower, Ingredient, Recipe, Tag
 from .filters import RecipeFilter
-from djoser.views import TokenCreateView
+from djoser.views import TokenCreateView, TokenDestroyView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer
+from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedOrGetOnly
 import base64
-
+from .utils import decode_img
 from django.core.files.base import ContentFile
 
 
-class CustomTokenView(TokenCreateView):
+class CustomTokenCreateView(TokenCreateView,):
+
     def post(self, request, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -44,6 +46,7 @@ class CustomTokenView(TokenCreateView):
                             status=status.HTTP_401_UNAUTHORIZED)
         return Response('Требуются пароль и почта',
                         status=status.HTTP_400_BAD_REQUEST)
+        
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -69,10 +72,8 @@ class UserViewSet(viewsets.ModelViewSet):
         if not avatar_data:
             return Response({'avatar': 'Обязательное поле.'},
                             status=status.HTTP_400_BAD_REQUEST)
-        format, imgstr = avatar_data.split(';base64,')
-        ext = format.split('/')[-1]
-        file_name = f'avatar_{user.id}.{ext}'
-        file_content = ContentFile(base64.b64decode(imgstr), name=file_name)
+        file_name, file_content = decode_img(img_data=avatar_data,
+                                             user=user)
         user.avatar.save(file_name, file_content, save=True)
         avatar_url = request.build_absolute_uri(user.avatar.url)
         return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
@@ -85,7 +86,19 @@ class RecipesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrGetOnly,]
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
-    
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RecipePostSerializer
+        return RecipeSerializer
+
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(author=user, is_favorited=True)
+
 
 class TagViewSet(viewsets.GenericViewSet,
                  mixins.ListModelMixin,

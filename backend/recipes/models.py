@@ -68,7 +68,7 @@ class Recipe(models.Model):
     text = models.TextField()
     ingredients = models.ManyToManyField(
         Ingredient,
-        through='RecipeIngredient'
+        through='RecipeIngredient',
     )
     tags = models.ManyToManyField(
         Tag,
@@ -77,8 +77,8 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)]
     )
-    is_favorited = models.BooleanField()
-    is_in_shopping_cart = models.BooleanField()
+    is_favorited = models.BooleanField(default=False)
+    is_in_shopping_cart = models.BooleanField(default=False)
 
 
 class RecipeIngredient(models.Model):

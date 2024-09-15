@@ -4,7 +4,7 @@ from rest_framework.validators import UniqueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient
 from recipes.constants import MAX_LENGTH_USERNAME, MAX_LENGTH_EMAIL
-
+from .utils import decode_img
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -89,6 +89,52 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+
+class RecipePostSerializer(serializers.ModelSerializer):
+    ingredients = serializers.ListField()
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(),
+        many=True
+    )
+    image = serializers.CharField()
+
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        img_data = validated_data.pop('image')
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags', [])
+        recipe = Recipe.objects.create(**validated_data)
+        file_name, file_content = decode_img(img_data, user)
+        recipe.image.save(file_name, file_content, save=True)
+        
+        recipe.tags.add(*tags)
+        
+
+        recipes_ingredients = [RecipeIngredient(
+            ingredient=Ingredient.objects.get(id=ingredient['id']),
+            amount=ingredient['amount'],
+            recipe=recipe) for ingredient in ingredients]
+        RecipeIngredient.objects.bulk_create(
+            recipes_ingredients
+        )
+
+        return recipe
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['tags'] = TagSerializer(instance.tags).data
+        
+        return representation
+    class Meta:
+        model = Recipe
+        fields = [
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time'
+        ]
 
 class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(source='recipeingredient_set',
