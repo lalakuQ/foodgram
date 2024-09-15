@@ -65,13 +65,15 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    ingredient = IngredientSerializer()
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+    )
     amount = serializers.DecimalField(max_digits=5, decimal_places=2)
 
     class Meta:
         model = RecipeIngredient
         fields = [
-            'ingredient',
+            'id',
             'amount'
         ]
 
@@ -91,28 +93,25 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
-    ingredients = serializers.ListField()
+    ingredients = RecipeIngredientSerializer(many=True,
+                                             source='recipeingredient_set')
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
     )
     image = serializers.CharField()
 
-
     def create(self, validated_data):
         user = self.context['request'].user
         img_data = validated_data.pop('image')
-        ingredients = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('recipeingredient_set')
         tags = validated_data.pop('tags', [])
         recipe = Recipe.objects.create(**validated_data)
         file_name, file_content = decode_img(img_data, user)
         recipe.image.save(file_name, file_content, save=True)
-        
         recipe.tags.add(*tags)
-        
-
         recipes_ingredients = [RecipeIngredient(
-            ingredient=Ingredient.objects.get(id=ingredient['id']),
+            ingredient=ingredient['id'],
             amount=ingredient['amount'],
             recipe=recipe) for ingredient in ingredients]
         RecipeIngredient.objects.bulk_create(
@@ -120,11 +119,12 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
 
         return recipe
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['tags'] = TagSerializer(instance.tags).data
-        
+        representation['tags'] = TagSerializer(instance.tags, many=True).data
         return representation
+
     class Meta:
         model = Recipe
         fields = [
