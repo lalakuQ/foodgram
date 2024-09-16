@@ -2,12 +2,12 @@ from django.urls import path, include
 from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 from djoser.views import TokenDestroyView
-from .views import UserViewSet, RecipesViewSet, CustomTokenCreateView, TagViewSet, IngredientViewSet
+from .views import UserViewSet, RecipesViewSet, CustomTokenCreateView, TagViewSet, IngredientViewSet, URLRedirectView
 router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='users')
-router.register(r'tags', TagViewSet, basename='tags')
-router.register(r'recipes', RecipesViewSet, basename='recipes')
-router.register(r'ingredients', IngredientViewSet, basename='ingredients')
+router.register('users', UserViewSet, basename='users')
+router.register('tags', TagViewSet, basename='tags')
+router.register('recipes', RecipesViewSet, basename='recipes')
+router.register('ingredients', IngredientViewSet, basename='ingredients')
 
 
 urlpatterns = [
@@ -18,6 +18,9 @@ urlpatterns = [
     path('users/me/avatar/', UserViewSet.as_view({'post': 'manage_avatar',
                                                  'delete': 'manage_avatar'})),
     path('users/', UserViewSet.as_view({'get': 'list'})),
+    path('<slug:shortcode>/',
+         URLRedirectView.as_view(),
+         name='short_url_redirect'),
     path('', include('djoser.urls')),
     path('', include(router.urls)),
 ]

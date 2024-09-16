@@ -2,15 +2,17 @@ from .constants import (MAX_LENGTH_EMAIL,
                         MAX_LENGTH_FIRST_NAME,
                         MAX_LENGTH_LAST_NAME,
                         MAX_LENGTH_NAME,
-                        MAX_LENGTH_ROLE,
                         MAX_LENGTH_SLUG,
                         MAX_LENGTH_USERNAME,
-                        MIN_VALUE_COOKING_TIME)
+                        MIN_VALUE_COOKING_TIME,
+                        MAX_LENGTH_SHORTCODE)
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from rest_framework import validators
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.conf import settings
+from django.urls import reverse
+BASE_URL = getattr(settings, "BASE_URL", "http://127.0.0.1:8000")
 class User(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_USERNAME,
                                 unique=True)
@@ -85,3 +87,13 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=5, decimal_places=2)
+
+
+class ShortUrl(models.Model):
+    url = models.CharField(max_length=256)
+    shortcode = models.CharField(max_length=MAX_LENGTH_SHORTCODE)
+
+    def get_short_url(self):
+        url_path = BASE_URL + reverse('short_url_redirect',
+                                      kwargs={'shortcode': self.shortcode})
+        return url_path

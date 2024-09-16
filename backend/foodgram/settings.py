@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-5-c0@j5xg0scrfge3t)1a+i)_y1e-edx5#_rs0=zjkkmg-^vo%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', 'localhost', '0.0.0.0']
+ALLOWED_HOSTS = ['*', 'localhost', '0.0.0.0', '127.0.0.1']
 
 
 # Application definition
@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'djoser',
     'api.apps.ApiConfig',
     'recipes.apps.RecipesConfig',
-    'django_url_shortener',
 ]
 
 MIDDLEWARE = [
