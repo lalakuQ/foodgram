@@ -8,7 +8,7 @@ from rest_framework import routers
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    
+    path('s/', include('django_url_shortener.urls')),
 ]
 
 

@@ -11,11 +11,13 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+import hashlib
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from recipes.models import User, Follower, Ingredient, Recipe, Tag
 from .filters import RecipeFilter
 from djoser.views import TokenCreateView, TokenDestroyView
+from urllib.parse import urlparse
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
@@ -27,7 +29,7 @@ from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 import base64
 from .utils import decode_img
 from django.core.files.base import ContentFile
-
+from django_url_shortener.utils import shorten_url
 
 class CustomTokenCreateView(TokenCreateView,):
 
@@ -86,6 +88,21 @@ class RecipesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedAuthorSuperuserOrReadOnly,]
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
+
+    @action(
+        methods=['GET'],
+        url_path='get-link',
+        detail=True,
+    )
+    def get_short_link(self, request, pk):
+        domain = request.get_host()
+        path = request.path
+        segments = path.strip('/').split('/')
+        path = '/'.join(segments[:-1])
+        created, short_url = shorten_url(f'{domain}/{path}')
+        return Response({
+            'short-link': short_url
+        }, status=status.HTTP_200_OK)
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH']:

@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'api.apps.ApiConfig',
-    'recipes.apps.RecipesConfig'
+    'recipes.apps.RecipesConfig',
+    'django_url_shortener',
 ]
 
 MIDDLEWARE = [
