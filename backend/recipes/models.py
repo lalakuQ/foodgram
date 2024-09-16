@@ -20,7 +20,7 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     avatar = models.ImageField(upload_to='users/')
-    is_subscribed = models.BooleanField(default=False)
+    
     bookmarked_recipes = models.ManyToManyField('Recipe', related_name='users')
     shopping_recipes = models.ManyToManyField('Recipe',)
     REQUIRED_FIELDS = ['first_name',
@@ -37,6 +37,7 @@ class Follower(models.Model):
     following_user = models.ForeignKey(User,
                                        related_name='followers',
                                        on_delete=models.CASCADE)
+    is_subscribed = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

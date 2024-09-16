@@ -24,9 +24,12 @@ from rest_framework.response import Response
 from django.shortcuts import redirect
 from rest_framework.permissions import AllowAny
 from rest_framework import status
+from django.db import transaction
+
+
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer
+from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer, FollowerSerializer
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 import base64
@@ -50,7 +53,7 @@ class CustomTokenCreateView(TokenCreateView,):
                             status=status.HTTP_401_UNAUTHORIZED)
         return Response('Требуются пароль и почта',
                         status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -82,6 +85,51 @@ class UserViewSet(viewsets.ModelViewSet):
         avatar_url = request.build_absolute_uri(user.avatar.url)
         return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
 
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(IsAuthenticated,),
+    )
+    def subscribtion(self, request, pk):
+        recipes_limit = request.query_params.get('recipes_limit', None)
+
+        user = request.user
+        following_user = get_object_or_404(
+            User,
+            pk=pk,
+        )
+        if request.method == 'DELETE':
+            delete_sub = get_object_or_404(
+                Follower,
+                user=user,
+                following_user=following_user
+            )
+            delete_sub.delete()
+            return Response(
+                status=status.HTTP_204_NO_CONTENT
+            )
+
+        instance = Follower.objects.filter(
+            user=user,
+            following_user=following_user
+        ).exists()
+        if user != following_user and not instance:
+            object = Follower.objects.create(
+                user=user,
+                following_user=following_user,
+                is_subscribed=True
+            )
+            serializer = FollowerSerializer(
+                object,
+                context={'recipes_limit': recipes_limit}
+            )
+            return Response(serializer.data)
+        return Response(
+            {
+                'Ошибка': 'Уже подписан или при подписке на себя самого'
+            },
+            status=status.HTTP_400_BAD_REQUEST)
+
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -112,12 +160,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return RecipePostSerializer
         return RecipeSerializer
 
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(author=user, is_favorited=True)
+        serializer.save(author=user)
 
 
 class TagViewSet(viewsets.GenericViewSet,
@@ -141,4 +186,3 @@ class URLRedirectView(View):
             return HttpResponseRedirect(instance.url)
         except ShortUrl.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        

@@ -29,9 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-
         request = self.context.get('request')
-
         if request and request.method == 'GET':
             if 'password' in representation:
                 representation.pop('password')
@@ -151,6 +149,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             'cooking_time'
         ]
 
+
 class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(source='recipeingredient_set',
                                              many=True)
@@ -160,3 +159,55 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = '__all__'
+
+
+class RecipeListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ['id', 'name', 'image', 'cooking_time']
+
+
+class FollowedUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'avatar'
+        ]
+
+
+class FollowerSerializer(serializers.ModelSerializer):
+
+    following_user = FollowedUserSerializer()
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        recipes_limit = self.context.get('recipes_limit')
+        following_user_dict = representation.pop('following_user')
+
+        representation.update(dict(following_user_dict))
+
+        following_user = instance.following_user
+        recipes = following_user.recipes.all()
+        representation['recipes_count'] = recipes.count()
+        if recipes_limit:
+            try:
+                recipes = recipes[:int(recipes_limit)]
+                representation['recipes'] = RecipeListSerializer(
+                    recipes,
+                    many=True).data
+                return representation
+            except ValueError as e:
+                return e
+
+    class Meta:
+        model = Follower
+        fields = [
+            'following_user',
+            'is_subscribed'
+        ]
