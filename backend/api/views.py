@@ -33,8 +33,9 @@ from .serializers import UserSerializer, TagSerializer, RecipeSerializer, Ingred
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 import base64
-from .utils import decode_img, shorten_url
+from .utils import decode_img, shorten_url, save_recipes_to_text_file
 from django.core.files.base import ContentFile
+
 
 class CustomTokenCreateView(TokenCreateView,):
 
@@ -53,7 +54,6 @@ class CustomTokenCreateView(TokenCreateView,):
                             status=status.HTTP_401_UNAUTHORIZED)
         return Response('Требуются пароль и почта',
                         status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -86,8 +86,23 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
 
     @action(
+        methods=['GET'],
+        detail=False,   
+    )
+    def get_subscribtions(self, request):
+        recipes_limit = request.query_params.get('recipes_limit', None)
+        queryset = request.user.following.all()
+        serializer = FollowerSerializer(
+            queryset,
+            many=True,
+            context={'recipes_limit': recipes_limit},
+        )
+        return Response(serializer.data)
+
+    @action(
         methods=['POST', 'DELETE'],
         detail=True,
+        url_path='subscribe',
         permission_classes=(IsAuthenticated,),
     )
     def subscribtion(self, request, pk):
@@ -119,6 +134,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 following_user=following_user,
                 is_subscribed=True
             )
+
             serializer = FollowerSerializer(
                 object,
                 context={'recipes_limit': recipes_limit}
@@ -152,10 +168,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 pk=pk
             )
             if request.method == 'DELETE':
-                user.bookmarked_recipes.remove(recipe)
-                return Response(
-                    status=status.HTTP_204_NO_CONTENT
-                )
+                if user.bookmarked_recipes.filter(pk=pk).exists():
+                    user.bookmarked_recipes.remove(recipe)
+                    return Response(
+                        status=status.HTTP_204_NO_CONTENT
+                    )
+                raise Exception('Рецепт не находится в ваших избранных')
             if user.bookmarked_recipes.filter(pk=pk).exists():
                 raise Exception('Рецепт уже находится в избранных')
             user.bookmarked_recipes.add(recipe)
@@ -195,6 +213,48 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 'errors': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(
+        methods=['GET'],
+        detail=False,
+        url_path='download_shopping_cart',
+        permission_classes=[IsAuthenticated],
+    )
+    def get_shopping_cart_file(self, request):
+        return save_recipes_to_text_file(
+            request.user.shopping_recipes.all()
+        )
+
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        url_path='shopping_cart'
+    )
+    def recipe_shopping_cart(self, request, pk):
+        try:
+            user = request.user
+            recipe = get_object_or_404(
+                Recipe,
+                pk=pk
+            )
+            if request.method == 'DELETE':
+                if user.shopping_recipes.filter(pk=pk).exists():
+                    user.shopping_recipes.remove(recipe)
+                    return Response(
+                        status=status.HTTP_204_NO_CONTENT
+                    )
+                raise Exception('Рецепт не находится в вашей корзине')
+            if user.shopping_recipes.filter(pk=pk).exists():
+                raise Exception('Рецепт уже находится в корзине')
+            user.shopping_recipes.add(recipe)
+            obj = RecipeListSerializer(recipe).data
+            return Response(
+                obj,
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response({
+                'errors': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH']:
             return RecipePostSerializer

@@ -1,8 +1,10 @@
 import base64
 import random
 import string
+import io
 from django.core.files.base import ContentFile
 from recipes.models import RecipeIngredient, ShortUrl
+from rest_framework.response import Response
 from recipes.constants import MAX_LENGTH_SHORTCODE
 
 def decode_img(img_data, user):
@@ -56,3 +58,32 @@ def shorten_url(full_url, secure=False):
         shortcode=shortcode
     )
     return instance.get_short_url()
+
+
+def save_recipes_to_text_file(recipes):
+
+    recipe_dict = {}
+    for recipe in recipes:
+        recipes_ingredients = RecipeIngredient.objects.filter(
+            recipe=recipe
+        )
+        for recipe_ing in recipes_ingredients:
+            ing = recipe_ing.ingredient
+            if ing.name in recipe_dict.keys():
+                recipe_dict[ing.name]['amount'] += recipe_ing.amount
+            else:
+                recipe_dict[ing.name] = {
+                    'amount': recipe_ing.amount,
+                    'unit': ing.unit.name
+                }
+    output = io.StringIO()
+    output.write("Ингредиенты:\n")
+    for ing_name, data in recipe_dict.items():
+        output.write(f"{ing_name}: {data['amount']} ({data['unit']})\n")
+    
+    output.seek(0)
+    
+    response = Response(output.read(), content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename=recipes.txt'
+    
+    return response

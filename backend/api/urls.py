@@ -17,11 +17,13 @@ urlpatterns = [
          name='token_logout'),
     path('users/me/avatar/', UserViewSet.as_view({'post': 'manage_avatar',
                                                  'delete': 'manage_avatar'})),
-    path('users/', UserViewSet.as_view({'get': 'list'})),
-    path('users/<int:pk>/subscribe', UserViewSet.as_view({
+    path('users/subscribtions/', UserViewSet.as_view({
+        'get': 'get_subscribtions'})
+    ),
+    path('users/', UserViewSet.as_view({
         'post': 'subscribtion',
         'delete': 'subscribtion'})),
-    
+
     path('', include('djoser.urls')),
     path('', include(router.urls)),
 ]

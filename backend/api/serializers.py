@@ -193,8 +193,9 @@ class FollowerSerializer(serializers.ModelSerializer):
 
         following_user = instance.following_user
         recipes = following_user.recipes.all()
-        representation['recipes_count'] = recipes.count()
-        if recipes_limit:
+        recipes_count = recipes.count()
+        representation['recipes_count'] = recipes_count
+        if recipes_limit and recipes_count != 0:
             try:
                 recipes = recipes[:int(recipes_limit)]
                 representation['recipes'] = RecipeListSerializer(
@@ -203,6 +204,8 @@ class FollowerSerializer(serializers.ModelSerializer):
                 return representation
             except ValueError as e:
                 return e
+        representation['recipes'] = []
+        return representation
 
     class Meta:
         model = Follower

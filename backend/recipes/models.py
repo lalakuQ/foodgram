@@ -22,14 +22,15 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     avatar = models.ImageField(upload_to='users/')
-    
     bookmarked_recipes = models.ManyToManyField('Recipe', related_name='users')
     shopping_recipes = models.ManyToManyField('Recipe',)
     REQUIRED_FIELDS = ['first_name',
                        'last_name',
                        'email',
-                       'is_subscribed',
                        'avatar']
+
+    def __str__(self) -> str:
+        return self.username
 
 
 class Follower(models.Model):
@@ -54,14 +55,23 @@ class Tag(models.Model):
     name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
     slug = models.SlugField(unique=True, max_length=MAX_LENGTH_SLUG)
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
     unit = models.ForeignKey('Unit', null=True, on_delete=models.SET_NULL)
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Unit(models.Model):
     name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Recipe(models.Model):
@@ -82,8 +92,9 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)]
     )
-    is_favorited = models.BooleanField(default=False)
-    is_in_shopping_cart = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class RecipeIngredient(models.Model):
