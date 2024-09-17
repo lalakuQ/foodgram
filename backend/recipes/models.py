@@ -21,7 +21,7 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=MAX_LENGTH_FIRST_NAME)
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
-    avatar = models.ImageField(upload_to='users/')
+    avatar = models.ImageField(upload_to='users/', null=True)
     bookmarked_recipes = models.ManyToManyField('Recipe', related_name='users')
     shopping_recipes = models.ManyToManyField('Recipe',)
     REQUIRED_FIELDS = ['first_name',

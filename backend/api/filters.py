@@ -16,7 +16,8 @@ class RecipeFilter(django_filters.FilterSet):
         lookup_expr='exact'
     )
     tags = django_filters.ModelMultipleChoiceFilter(
-        field_name='tags',
+        field_name='tags__slug',
+        to_field_name='slug',
         queryset=Tag.objects.all()
     )
 

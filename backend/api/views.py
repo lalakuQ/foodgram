@@ -87,7 +87,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['GET'],
-        detail=False,   
+        detail=False,
     )
     def get_subscribtions(self, request):
         recipes_limit = request.query_params.get('recipes_limit', None)
