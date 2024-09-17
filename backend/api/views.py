@@ -16,7 +16,7 @@ from django.views import View
 import hashlib
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from recipes.models import User, Follower, Ingredient, Recipe, Tag, ShortUrl
+from recipes.models import User, Follower, Ingredient, Recipe, Tag, ShortUrl, UserRecipe
 from .filters import RecipeFilter
 from djoser.views import TokenCreateView, TokenDestroyView
 from urllib.parse import urlparse
@@ -149,7 +149,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticatedAuthorSuperuserOrReadOnly,]
     filter_backends = [DjangoFilterBackend]
@@ -160,23 +159,29 @@ class RecipesViewSet(viewsets.ModelViewSet):
         detail=True,
         url_path='favorite'
     )
-    def bookmarked_recipe(self, request, pk):
+    def favorite_recipe(self, request, pk):
         try:
             user = request.user
             recipe = get_object_or_404(
                 Recipe,
                 pk=pk
             )
+            user_recipe, created = UserRecipe.objects.get_or_create(
+                recipe=recipe,
+                user=user,
+            )
+            is_favorite = user_recipe.is_favorite
             if request.method == 'DELETE':
-                if user.bookmarked_recipes.filter(pk=pk).exists():
-                    user.bookmarked_recipes.remove(recipe)
+                if is_favorite is True:
+                    is_favorite = False,
                     return Response(
                         status=status.HTTP_204_NO_CONTENT
                     )
                 raise Exception('Рецепт не находится в ваших избранных')
-            if user.bookmarked_recipes.filter(pk=pk).exists():
+            if is_favorite is True:
                 raise Exception('Рецепт уже находится в избранных')
-            user.bookmarked_recipes.add(recipe)
+            user_recipe.is_favorite = True
+            user_recipe.save()
             obj = RecipeListSerializer(recipe).data
             return Response(
                 obj,
@@ -236,16 +241,22 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 Recipe,
                 pk=pk
             )
+            user_recipe, created = UserRecipe.objects.get_or_create(
+                recipe=recipe,
+                user=user,
+            )
+            is_in_shopping_cart = user_recipe.is_in_shopping_cart
             if request.method == 'DELETE':
-                if user.shopping_recipes.filter(pk=pk).exists():
-                    user.shopping_recipes.remove(recipe)
+                if is_in_shopping_cart is True:
+                    is_in_shopping_cart = False
                     return Response(
                         status=status.HTTP_204_NO_CONTENT
                     )
                 raise Exception('Рецепт не находится в вашей корзине')
-            if user.shopping_recipes.filter(pk=pk).exists():
+            if is_in_shopping_cart is True:
                 raise Exception('Рецепт уже находится в корзине')
-            user.shopping_recipes.add(recipe)
+            user_recipe.is_in_shopping_cart = True
+            user_recipe.save()
             obj = RecipeListSerializer(recipe).data
             return Response(
                 obj,
@@ -255,6 +266,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response({
                 'errors': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
+
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH']:
             return RecipePostSerializer

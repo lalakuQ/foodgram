@@ -22,8 +22,7 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     avatar = models.ImageField(upload_to='users/', null=True)
-    bookmarked_recipes = models.ManyToManyField('Recipe', related_name='users')
-    shopping_recipes = models.ManyToManyField('Recipe',)
+    
     REQUIRED_FIELDS = ['first_name',
                        'last_name',
                        'email',
@@ -31,6 +30,19 @@ class User(AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+
+class UserRecipe(models.Model):
+    is_in_shopping_cart = models.BooleanField(default=False)
+    is_favorite = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE
+    )
 
 
 class Follower(models.Model):
@@ -51,27 +63,26 @@ class Follower(models.Model):
         ]
 
 
-class Tag(models.Model):
+class TagIngredientUnit(models.Model):
     name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        abstract = True
+
+
+class Tag(TagIngredientUnit):
     slug = models.SlugField(unique=True, max_length=MAX_LENGTH_SLUG)
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class Ingredient(models.Model):
-    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
+class Ingredient(TagIngredientUnit):
     unit = models.ForeignKey('Unit', null=True, on_delete=models.SET_NULL)
 
-    def __str__(self) -> str:
-        return self.name
 
-
-class Unit(models.Model):
-    name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
-
-    def __str__(self) -> str:
-        return self.name
+class Unit(TagIngredientUnit):
+    pass
 
 
 class Recipe(models.Model):
@@ -100,7 +111,7 @@ class Recipe(models.Model):
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
+    amount = models.PositiveSmallIntegerField()
 
 
 class ShortUrl(models.Model):

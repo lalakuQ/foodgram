@@ -2,9 +2,11 @@ from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient
+from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient, UserRecipe
 from recipes.constants import MAX_LENGTH_USERNAME, MAX_LENGTH_EMAIL
 from .utils import decode_img, create_recipe_ingredients
+
+
 class UserSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(
@@ -134,7 +136,16 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['tags'] = TagSerializer(instance.tags, many=True).data
+
+        representation.update(
+            {
+                'tags': TagSerializer(instance.tags, many=True).data,
+                'author': UserSerializer(instance.author).data,
+                'is_favorite': False,
+                'is_in_shopping_cart': False,
+            }
+        )
+        representation['author'].pop('password')
         return representation
 
     class Meta:
@@ -145,7 +156,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             'image',
             'name',
             'text',
-            'cooking_time'
+            'cooking_time',
         ]
 
 
@@ -154,6 +165,26 @@ class RecipeSerializer(serializers.ModelSerializer):
                                              many=True)
     tags = TagSerializer(many=True)
     author = UserSerializer()
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        recipe_dict = {}
+        request = self.context.get('request')
+        try:
+            user_recipe = UserRecipe.objects.get(recipe=instance,
+                                                 user=request.user)
+                                                 
+            recipe_dict = {
+                'is_favorite': user_recipe.is_favorite,
+                'is_in_shopping_cart': user_recipe.is_in_shopping_cart,
+            }
+        except Exception:
+            recipe_dict = {
+                'is_favorite': False,
+                'is_in_shopping_cart': False,
+            }
+        representation.update(recipe_dict)
+        return representation
 
     class Meta:
         model = Recipe
