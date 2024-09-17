@@ -35,7 +35,19 @@ class UserSerializer(serializers.ModelSerializer):
         if request and request.method == 'GET':
             if 'password' in representation:
                 representation.pop('password')
-
+        try:
+            following = Follower.objects.get(
+                user=request.user,
+                following_user=instance
+            )
+            following_dict = {
+                'is_subscribed': following.is_subscribed
+            }
+        except Exception:
+            following_dict = {
+                'is_subscribed': False
+            }
+        representation.update(following_dict)
         return representation
 
     class Meta:

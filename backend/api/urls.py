@@ -18,8 +18,9 @@ urlpatterns = [
     path('users/me/avatar/', UserViewSet.as_view({'post': 'manage_avatar',
                                                  'delete': 'manage_avatar'})),
     path('users/subscriptions/', UserViewSet.as_view({
-        'get': 'get_subscribtions'})
+        'get': 'get_subscriptions'})
     ),
-    path('', include('djoser.urls')),
+    path('users/me/', include('djoser.urls')),
+    path('users/set_password/', include('djoser.urls')),
     path('', include(router.urls)),
 ]

@@ -89,7 +89,7 @@ class UserViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
     )
-    def get_subscribtions(self, request):
+    def get_subscriptions(self, request):
         recipes_limit = request.query_params.get('recipes_limit', None)
         queryset = request.user.following.all()
         serializer = FollowerSerializer(
@@ -105,7 +105,7 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path='subscribe',
         permission_classes=(IsAuthenticated,),
     )
-    def subscribtion(self, request, pk):
+    def subscription(self, request, pk):
         recipes_limit = request.query_params.get('recipes_limit', None)
 
         user = request.user
@@ -173,7 +173,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
             is_favorite = user_recipe.is_favorite
             if request.method == 'DELETE':
                 if is_favorite is True:
-                    is_favorite = False,
+                    user_recipe.is_favorite = False,
+                    user_recipe.save()
                     return Response(
                         status=status.HTTP_204_NO_CONTENT
                     )
@@ -248,7 +249,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
             is_in_shopping_cart = user_recipe.is_in_shopping_cart
             if request.method == 'DELETE':
                 if is_in_shopping_cart is True:
-                    is_in_shopping_cart = False
+                    user_recipe.is_in_shopping_cart = False,
+                    user_recipe.save()
                     return Response(
                         status=status.HTTP_204_NO_CONTENT
                     )
