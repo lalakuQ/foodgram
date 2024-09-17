@@ -39,7 +39,7 @@ def create_shortcode(size=MAX_LENGTH_SHORTCODE):
     return code
 
 
-def shorten_url(full_url, secure=False):
+def shorten_url(full_url, domain='localhost', secure=False):
     if secure is False:
         full_url = 'http://' + full_url
     else:
@@ -48,16 +48,15 @@ def shorten_url(full_url, secure=False):
         instance = ShortUrl.objects.get(
             url=full_url
         )
+        return instance.get_short_url(domain)
     except ShortUrl.DoesNotExist:
         instance = None
-    if instance:
-        return instance.get_short_url()
     shortcode = create_shortcode()
     instance = ShortUrl.objects.create(
         url=full_url,
         shortcode=shortcode
     )
-    return instance.get_short_url()
+    return instance.get_short_url(domain)
 
 
 def save_recipes_to_text_file(recipes):

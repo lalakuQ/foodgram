@@ -209,6 +209,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             segments = path.strip('/').split('/')
             path = '/'.join(segments[:-1])
             short_url = shorten_url(f'{domain}/{path}',
+                                    domain,
                                     secure=request.is_secure())
             return Response({
                 'short-link': short_url

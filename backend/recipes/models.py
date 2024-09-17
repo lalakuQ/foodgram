@@ -12,7 +12,7 @@ from rest_framework import validators
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.urls import reverse
-BASE_URL = getattr(settings, "BASE_URL", "http://127.0.0.1:8000")
+
 
 
 class User(AbstractUser):
@@ -118,7 +118,7 @@ class ShortUrl(models.Model):
     url = models.CharField(max_length=256)
     shortcode = models.CharField(max_length=MAX_LENGTH_SHORTCODE)
 
-    def get_short_url(self):
-        url_path = BASE_URL + reverse('short_url_redirect',
-                                      kwargs={'shortcode': self.shortcode})
+    def get_short_url(self, domain):
+        url_path = domain + reverse('short_url_redirect',
+                                    kwargs={'shortcode': self.shortcode})
         return url_path
