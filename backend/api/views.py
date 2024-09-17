@@ -29,7 +29,7 @@ from django.db import transaction
 
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer, FollowerSerializer
+from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer, FollowerSerializer, RecipeListSerializer
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 import base64
@@ -140,20 +140,60 @@ class RecipesViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        url_path='favorite'
+    )
+    def bookmarked_recipe(self, request, pk):
+        try:
+            user = request.user
+            recipe = get_object_or_404(
+                Recipe,
+                pk=pk
+            )
+            if request.method == 'DELETE':
+                user.bookmarked_recipes.remove(recipe)
+                return Response(
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            if user.bookmarked_recipes.filter(pk=pk).exists():
+                raise Exception('Рецепт уже находится в избранных')
+            user.bookmarked_recipes.add(recipe)
+            obj = RecipeListSerializer(recipe).data
+            return Response(
+                obj,
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response({
+                'errors': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
         methods=['GET'],
         url_path='get-link',
         detail=True,
     )
     def get_short_link(self, request, pk):
-        domain = request.get_host()
-        path = request.path
-        segments = path.strip('/').split('/')
-        path = '/'.join(segments[:-1])
-        short_url = shorten_url(f'{domain}/{path}',
-                                secure=request.is_secure())
-        return Response({
-            'short-link': short_url
-        }, status=status.HTTP_200_OK)
+        try:
+            get_object_or_404(
+                Recipe,
+                pk=pk
+            )
+            domain = request.get_host()
+            path = request.path
+            segments = path.strip('/').split('/')
+            path = '/'.join(segments[:-1])
+            short_url = shorten_url(f'{domain}/{path}',
+                                    secure=request.is_secure())
+            return Response({
+                'short-link': short_url
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                'errors': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH']:

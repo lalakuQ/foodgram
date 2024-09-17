@@ -3,12 +3,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from rest_framework import routers
-
+from api.views import URLRedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('s/', include('api.urls')),
+    path('s/<slug:shortcode>/', URLRedirectView.as_view(),
+         name='short_url_redirect'),
 ]
 
 

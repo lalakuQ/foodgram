@@ -21,9 +21,7 @@ urlpatterns = [
     path('users/<int:pk>/subscribe', UserViewSet.as_view({
         'post': 'subscribtion',
         'delete': 'subscribtion'})),
-    path('<slug:shortcode>/',
-         URLRedirectView.as_view(),
-         name='short_url_redirect'),
+    
     path('', include('djoser.urls')),
     path('', include(router.urls)),
 ]

@@ -13,6 +13,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.urls import reverse
 BASE_URL = getattr(settings, "BASE_URL", "http://127.0.0.1:8000")
+
+
 class User(AbstractUser):
     username = models.CharField(max_length=MAX_LENGTH_USERNAME,
                                 unique=True)
