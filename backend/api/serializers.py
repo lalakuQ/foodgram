@@ -151,6 +151,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
         representation.update(
             {
+                'id': instance.id,
                 'tags': TagSerializer(instance.tags, many=True).data,
                 'author': UserSerializer(instance.author).data,
                 'is_favorite': False,
@@ -185,7 +186,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         try:
             user_recipe = UserRecipe.objects.get(recipe=instance,
                                                  user=request.user)
-                                                 
+                               
             recipe_dict = {
                 'is_favorited': user_recipe.is_favorite,
                 'is_in_shopping_cart': user_recipe.is_in_shopping_cart,
@@ -203,7 +204,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RecipeListSerializer(serializers.ModelSerializer):
+class RecipeGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
@@ -241,7 +242,7 @@ class FollowerSerializer(serializers.ModelSerializer):
         if recipes_limit and recipes_count != 0:
             try:
                 recipes = recipes[:int(recipes_limit)]
-                representation['recipes'] = RecipeListSerializer(
+                representation['recipes'] = RecipeGetSerializer(
                     recipes,
                     many=True).data
                 return representation

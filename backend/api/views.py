@@ -29,7 +29,7 @@ from django.db import transaction
 
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer, FollowerSerializer, RecipeListSerializer
+from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer, FollowerSerializer, RecipeGetSerializer
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 import base64
@@ -197,7 +197,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 raise Exception('Рецепт уже находится в избранных')
             user_recipe.is_favorite = True
             user_recipe.save()
-            obj = RecipeListSerializer(recipe).data
+            obj = RecipeGetSerializer(recipe).data
             return Response(
                 obj,
                 status=status.HTTP_201_CREATED
@@ -274,7 +274,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 raise Exception('Рецепт уже находится в корзине')
             user_recipe.is_in_shopping_cart = True
             user_recipe.save()
-            obj = RecipeListSerializer(recipe).data
+            obj = RecipeGetSerializer(recipe).data
             return Response(
                 obj,
                 status=status.HTTP_201_CREATED
