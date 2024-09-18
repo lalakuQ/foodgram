@@ -1,5 +1,5 @@
 import django_filters
-from recipes.models import Recipe, Tag, UserRecipe
+from recipes.models import Recipe, Tag, UserRecipe, Ingredient
 
 
 class RecipeFilter(django_filters.FilterSet):
@@ -19,6 +19,8 @@ class RecipeFilter(django_filters.FilterSet):
 
     def filter_user_recipe(self, queryset, value, field, name=None):
         user = self.request.user
+        if not user.is_authenticated:
+            return queryset
         for recipe in queryset:
             UserRecipe.objects.get_or_create(
                 recipe=recipe,
@@ -47,4 +49,17 @@ class RecipeFilter(django_filters.FilterSet):
         fields = ['is_favorited',
                   'is_in_shopping_cart',
                   'author',
-                  'tags']
+                  'tags',]
+
+
+class IngredientFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='startswith'
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = [
+            'name',
+        ]

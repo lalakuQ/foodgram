@@ -1,17 +1,20 @@
 from django.db import IntegrityError
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+from rest_framework.validators import UniqueValidator, ValidationError
+from django.core.validators import MinValueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient, UserRecipe
+from rest_framework.validators import UniqueTogetherValidator
+from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient, UserRecipe, RecipeTag
 from recipes.constants import MAX_LENGTH_USERNAME, MAX_LENGTH_EMAIL
 from .utils import decode_img, create_recipe_ingredients
+from recipes.validators import validate_username
 
 
 class UserSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(
         max_length=MAX_LENGTH_USERNAME,
-        validators=[UnicodeUsernameValidator,
+        validators=[UnicodeUsernameValidator(),
                     UniqueValidator(queryset=User.objects.all())],
     )
 
@@ -20,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         user_data = {
+            'id': user.id,
             'email': user.email,
             'username': user.username,
             'first_name': user.first_name,
@@ -32,9 +36,10 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         request = self.context.get('request')
-        if request and request.method == 'GET':
-            if 'password' in representation:
-                representation.pop('password')
+        representation.pop('password', None)
+        if request and not request.method == 'GET':
+            representation.pop('avatar', None)
+            return representation
         try:
             following = Follower.objects.get(
                 user=request.user,
@@ -78,13 +83,14 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
     )
-    amount = serializers.DecimalField(max_digits=5, decimal_places=2)
+    amount = serializers.DecimalField(max_digits=5, decimal_places=2,
+                                      validators=[MinValueValidator(1)])
 
     class Meta:
         model = RecipeIngredient
         fields = [
             'id',
-            'amount'
+            'amount',
         ]
 
     def to_representation(self, instance):
@@ -92,7 +98,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
             'id': instance.ingredient.id,
             'name': instance.ingredient.name,
             'measurement_unit': instance.ingredient.unit.name,
-            'amount': str(instance.amount)
+            'amount': instance.amount
         }
 
 
@@ -104,13 +110,18 @@ class TagSerializer(serializers.ModelSerializer):
 
 class RecipePostSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(many=True,
-                                             source='recipeingredient_set')
+                                             source='recipeingredient_set',
+                                             allow_empty=False,
+                                             )
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
-        many=True
+        many=True,
+        allow_empty=False
     )
     image = serializers.CharField()
-
+    cooking_time = serializers.IntegerField(
+        validators=[MinValueValidator(1)]
+    )
     def create(self, validated_data):
         user = self.context['request'].user
         img_data = validated_data.pop('image')
@@ -119,8 +130,10 @@ class RecipePostSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         file_name, file_content = decode_img(img_data, user)
         recipe.image.save(file_name, file_content, save=True)
-        recipe.tags.add(*tags)
-        create_recipe_ingredients(recipe, ingredients)
+        try:
+            create_recipe_ingredients(recipe, ingredients, tags)
+        except Exception as e:
+            raise ValidationError(str(e))
 
         return recipe
 
@@ -130,18 +143,22 @@ class RecipePostSerializer(serializers.ModelSerializer):
         instance.cooking_time = validated_data.get('cooking_time',
                                                    instance.cooking_time)
 
-        img_data = validated_data.get('image')
+        img_data = validated_data.get('image', None)
         if img_data:
             user = self.context['request'].user
             file_name, file_content = decode_img(img_data, user)
             instance.image.save(file_name, file_content, save=True)
 
         tags = validated_data.get('tags', [])
-        instance.tags.set(tags)
-
         ingredients = validated_data.get('recipeingredient_set', [])
+        if len(tags) == 0 or len(ingredients) == 0:
+            raise ValidationError('Теги и ингредиенты не могут быть пустыми')
         instance.recipeingredient_set.all().delete()
-        create_recipe_ingredients(instance, ingredients)
+        instance.recipetag_set.all().delete()
+        try:
+            create_recipe_ingredients(instance, ingredients, tags)
+        except Exception as e:
+            raise ValidationError(str(e))
 
         instance.save()
         return instance
@@ -154,11 +171,10 @@ class RecipePostSerializer(serializers.ModelSerializer):
                 'id': instance.id,
                 'tags': TagSerializer(instance.tags, many=True).data,
                 'author': UserSerializer(instance.author).data,
-                'is_favorite': False,
+                'is_favorited': False,
                 'is_in_shopping_cart': False,
             }
         )
-        representation['author'].pop('password')
         return representation
 
     class Meta:
@@ -186,7 +202,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         try:
             user_recipe = UserRecipe.objects.get(recipe=instance,
                                                  user=request.user)
-                               
             recipe_dict = {
                 'is_favorited': user_recipe.is_favorite,
                 'is_in_shopping_cart': user_recipe.is_in_shopping_cart,

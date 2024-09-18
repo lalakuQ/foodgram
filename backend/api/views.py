@@ -17,7 +17,7 @@ import hashlib
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from recipes.models import User, Follower, Ingredient, Recipe, Tag, ShortUrl, UserRecipe
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 from djoser.views import TokenCreateView, TokenDestroyView
 from urllib.parse import urlparse
 from rest_framework.response import Response
@@ -51,7 +51,7 @@ class CustomTokenCreateView(TokenCreateView,):
                 return Response({'auth_token': str(token)},
                                 status=status.HTTP_200_OK)
             return Response('Неверные данные',
-                            status=status.HTTP_401_UNAUTHORIZED)
+                            status=status.HTTP_400_BAD_REQUEST)
         return Response('Требуются пароль и почта',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -62,6 +62,11 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     @action(
         methods=['POST', 'DELETE', 'PUT'],
@@ -128,12 +133,16 @@ class UserViewSet(viewsets.ModelViewSet):
             pk=pk,
         )
         if request.method == 'DELETE':
-            delete_sub = get_object_or_404(
-                Follower,
-                user=user,
-                following_user=following_user
-            )
-            delete_sub.delete()
+            try:
+                delete_sub = Follower.objects.get(
+                    user=user,
+                    following_user=following_user
+                )
+                delete_sub.delete()
+            except Exception:
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(
                 status=status.HTTP_204_NO_CONTENT
             )
@@ -153,7 +162,8 @@ class UserViewSet(viewsets.ModelViewSet):
                 object,
                 context={'recipes_limit': recipes_limit}
             )
-            return Response(serializer.data)
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
         return Response(
             {
                 'Ошибка': 'Уже подписан или при подписке на себя самого'
@@ -174,12 +184,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
         url_path='favorite'
     )
     def favorite_recipe(self, request, pk):
+        recipe = get_object_or_404(
+            Recipe,
+            pk=pk
+        )
         try:
             user = request.user
-            recipe = get_object_or_404(
-                Recipe,
-                pk=pk
-            )
             user_recipe, created = UserRecipe.objects.get_or_create(
                 recipe=recipe,
                 user=user,
@@ -242,21 +252,24 @@ class RecipesViewSet(viewsets.ModelViewSet):
     )
     def get_shopping_cart_file(self, request):
         return save_recipes_to_text_file(
-            request.user.shopping_recipes.all()
+            Recipe.objects.filter(
+                userrecipe__user=request.user,
+                userrecipe__is_in_shopping_cart=True,
+            )
         )
 
     @action(
         methods=['POST', 'DELETE'],
         detail=True,
-        url_path='shopping_cart'
+        url_path='shopping_cart',
     )
     def recipe_shopping_cart(self, request, pk):
+        recipe = get_object_or_404(
+            Recipe,
+            pk=pk
+        )
         try:
             user = request.user
-            recipe = get_object_or_404(
-                Recipe,
-                pk=pk
-            )
             user_recipe, created = UserRecipe.objects.get_or_create(
                 recipe=recipe,
                 user=user,
@@ -304,6 +317,8 @@ class TagViewSet(viewsets.GenericViewSet,
 class IngredientViewSet(viewsets.GenericViewSet,
                         mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,):
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = IngredientFilter
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
 

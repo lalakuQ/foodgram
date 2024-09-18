@@ -2,8 +2,10 @@ import base64
 import random
 import string
 import io
+import os
 from django.core.files.base import ContentFile
-from recipes.models import RecipeIngredient, ShortUrl
+from rest_framework import status
+from recipes.models import RecipeIngredient, ShortUrl, RecipeTag
 from rest_framework.response import Response
 from recipes.constants import MAX_LENGTH_SHORTCODE
 
@@ -16,14 +18,23 @@ def decode_img(img_data, user):
     return file_name, file_content
 
 
-def create_recipe_ingredients(recipe, ingredients):
+def create_recipe_ingredients(recipe, ingredients, tags):
     recipes_ingredients = [RecipeIngredient(
         ingredient=ingredient['id'],
         amount=ingredient['amount'],
         recipe=recipe) for ingredient in ingredients]
-    RecipeIngredient.objects.bulk_create(
-        recipes_ingredients
-    )
+    recipes_tags = [RecipeTag(
+        tag=tag,
+        recipe=recipe) for tag in tags]
+    try:
+        RecipeIngredient.objects.bulk_create(
+            recipes_ingredients
+        )
+        RecipeTag.objects.bulk_create(
+            recipes_tags
+        )
+    except Exception:
+        raise
 
 
 def code_generator(
@@ -76,14 +87,14 @@ def save_recipes_to_text_file(recipes):
                     'amount': recipe_ing.amount,
                     'unit': ing.unit.name
                 }
-    output = io.StringIO()
-    output.write("Ингредиенты:\n")
+    output = io.StringIO(newline='')
+    output.write('Ингредиенты:' + '\n')
     for ing_name, data in recipe_dict.items():
         output.write(f"{ing_name}: {data['amount']} ({data['unit']})\n")
-    
+
     output.seek(0)
-    
+
     response = Response(output.read(), content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=recipes.txt'
-    
+
     return response

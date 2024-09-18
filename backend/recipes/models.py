@@ -1,3 +1,4 @@
+from typing import Iterable
 from .constants import (MAX_LENGTH_EMAIL,
                         MAX_LENGTH_FIRST_NAME,
                         MAX_LENGTH_LAST_NAME,
@@ -8,21 +9,19 @@ from .constants import (MAX_LENGTH_EMAIL,
                         MAX_LENGTH_SHORTCODE)
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from rest_framework import validators
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.validators import UnicodeUsernameValidator, ASCIIUsernameValidator
 from django.conf import settings
 from django.urls import reverse
-
+from .validators import validate_username
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=MAX_LENGTH_USERNAME,
-                                unique=True)
+    username = models.CharField(max_length=MAX_LENGTH_USERNAME, unique=True,)
     first_name = models.CharField(max_length=MAX_LENGTH_FIRST_NAME)
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
-    avatar = models.ImageField(upload_to='users/')
-    
+    avatar = models.ImageField(upload_to='users/', null=True)
     REQUIRED_FIELDS = ['first_name',
                        'last_name',
                        'email',
@@ -98,20 +97,40 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(
         Tag,
+        through='RecipeTag',
         related_name='recipes',
     )
-    cooking_time = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)]
-    )
+    cooking_time = models.PositiveSmallIntegerField()
 
     def __str__(self) -> str:
         return self.name
+
+
+class RecipeTag(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'tag'],
+                name='unique_recipe_tag'
+            )
+        ]
 
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.PositiveSmallIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
+            )
+        ]
 
 
 class ShortUrl(models.Model):
