@@ -187,12 +187,12 @@ class RecipeSerializer(serializers.ModelSerializer):
                                                  user=request.user)
                                                  
             recipe_dict = {
-                'is_favorite': user_recipe.is_favorite,
+                'is_favorited': user_recipe.is_favorite,
                 'is_in_shopping_cart': user_recipe.is_in_shopping_cart,
             }
         except Exception:
             recipe_dict = {
-                'is_favorite': False,
+                'is_favorited': False,
                 'is_in_shopping_cart': False,
             }
         representation.update(recipe_dict)

@@ -64,8 +64,8 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     @action(
-        methods=['POST', 'DELETE'],
-        detail=True,
+        methods=['POST', 'DELETE', 'PUT'],
+        detail=False,
         url_path='me/avatar',
         permission_classes=(IsAuthenticated,),
     )
@@ -88,16 +88,30 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         methods=['GET'],
         detail=False,
+        url_path='me',
+        permission_classes=(IsAuthenticated,)
+    )
+    def me(self, request):
+        user = UserSerializer(request.user, context={
+            'request': request
+        }).data
+        return Response(user, status=status.HTTP_200_OK)
+
+    @action(
+        methods=['GET'],
+        detail=False,
+        url_path='subscriptions',
     )
     def get_subscriptions(self, request):
         recipes_limit = request.query_params.get('recipes_limit', None)
         queryset = request.user.following.all()
+        page = self.paginate_queryset(queryset)
         serializer = FollowerSerializer(
-            queryset,
+            page,
             many=True,
             context={'recipes_limit': recipes_limit},
         )
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(
         methods=['POST', 'DELETE'],
@@ -173,7 +187,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             is_favorite = user_recipe.is_favorite
             if request.method == 'DELETE':
                 if is_favorite is True:
-                    user_recipe.is_favorite = False,
+                    user_recipe.is_favorite = False
                     user_recipe.save()
                     return Response(
                         status=status.HTTP_204_NO_CONTENT
@@ -250,7 +264,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             is_in_shopping_cart = user_recipe.is_in_shopping_cart
             if request.method == 'DELETE':
                 if is_in_shopping_cart is True:
-                    user_recipe.is_in_shopping_cart = False,
+                    user_recipe.is_in_shopping_cart = False
                     user_recipe.save()
                     return Response(
                         status=status.HTTP_204_NO_CONTENT
