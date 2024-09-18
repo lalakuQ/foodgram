@@ -7,6 +7,7 @@ from recipes.models import RecipeIngredient, ShortUrl
 from rest_framework.response import Response
 from recipes.constants import MAX_LENGTH_SHORTCODE
 
+
 def decode_img(img_data, user):
     format, imgstr = img_data.split(';base64,')
     ext = format.split('/')[-1]

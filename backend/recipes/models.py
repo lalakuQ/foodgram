@@ -21,7 +21,7 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=MAX_LENGTH_FIRST_NAME)
     last_name = models.CharField(max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
-    avatar = models.ImageField(upload_to='users/', null=True)
+    avatar = models.ImageField(upload_to='users/')
     
     REQUIRED_FIELDS = ['first_name',
                        'last_name',
@@ -90,7 +90,7 @@ class Recipe(models.Model):
                                related_name='recipes',
                                on_delete=models.CASCADE)
     name = models.CharField(unique=True, max_length=MAX_LENGTH_NAME)
-    image = models.ImageField()
+    image = models.ImageField(upload_to='recipes/')
     text = models.TextField()
     ingredients = models.ManyToManyField(
         Ingredient,
