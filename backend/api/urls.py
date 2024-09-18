@@ -1,8 +1,11 @@
-from django.urls import path, include
-from rest_framework.authtoken import views
+from django.urls import include, path
+from djoser.views import TokenDestroyView
+from djoser.views import UserViewSet as djoser_UserViewSet
 from rest_framework.routers import DefaultRouter
-from djoser.views import TokenDestroyView, UserViewSet as djoser_UserViewSet
-from .views import UserViewSet, RecipesViewSet, CustomTokenCreateView, TagViewSet, IngredientViewSet, URLRedirectView
+
+from .views import (CustomTokenCreateView, IngredientViewSet, RecipesViewSet,
+                    TagViewSet, UserViewSet)
+
 router = DefaultRouter()
 router.register('users', UserViewSet, basename='users')
 router.register('tags', TagViewSet, basename='tags')

@@ -1,40 +1,25 @@
-from django.contrib.auth.tokens import default_token_generator
-from django.db.models import Avg
-from django.forms import ValidationError
-from django.db.models import Value, IntegerField
-from django_filters.rest_framework import DjangoFilterBackend
-from djoser import views as djoser_views
-from djoser import utils
-from rest_framework import status, viewsets, mixins
-from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import get_object_or_404
-from rest_framework.response import Response
+from django.contrib.auth import authenticate
 from django.http import HttpResponseRedirect
 from django.views import View
-import hashlib
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from recipes.models import User, Follower, Ingredient, Recipe, Tag, ShortUrl, UserRecipe
-from .filters import RecipeFilter, IngredientFilter
-from djoser.views import TokenCreateView, TokenDestroyView
-from urllib.parse import urlparse
-from rest_framework.response import Response
-from django.shortcuts import redirect
-from rest_framework.permissions import AllowAny
-from rest_framework import status
-from django.db import transaction
-
-
-from django.contrib.auth import authenticate
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import TokenCreateView
+from recipes.models import (Follower, Ingredient, Recipe, ShortUrl, Tag, User,
+                            UserRecipe)
+from rest_framework import mixins, status, viewsets
 from rest_framework.authtoken.models import Token
-from .serializers import UserSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipePostSerializer, FollowerSerializer, RecipeGetSerializer
+from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
-import base64
-from .utils import decode_img, shorten_url, save_recipes_to_text_file
-from django.core.files.base import ContentFile
+from .serializers import (FollowerSerializer, IngredientSerializer,
+                          RecipeGetSerializer,
+                          RecipePostSerializer, RecipeSerializer,
+                          TagSerializer, UserSerializer)
+from .utils import decode_img, save_recipes_to_text_file, shorten_url
 
 
 class CustomTokenCreateView(TokenCreateView,):

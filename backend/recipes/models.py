@@ -1,19 +1,11 @@
-from typing import Iterable
-from .constants import (MAX_LENGTH_EMAIL,
-                        MAX_LENGTH_FIRST_NAME,
-                        MAX_LENGTH_LAST_NAME,
-                        MAX_LENGTH_NAME,
-                        MAX_LENGTH_SLUG,
-                        MAX_LENGTH_USERNAME,
-                        MIN_VALUE_COOKING_TIME,
-                        MAX_LENGTH_SHORTCODE)
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.contrib.auth.validators import UnicodeUsernameValidator, ASCIIUsernameValidator
-from django.conf import settings
+from django.db import models
 from django.urls import reverse
-from .validators import validate_username
+
+from .constants import (MAX_LENGTH_EMAIL, MAX_LENGTH_FIRST_NAME,
+                        MAX_LENGTH_LAST_NAME, MAX_LENGTH_NAME,
+                        MAX_LENGTH_SHORTCODE, MAX_LENGTH_SLUG,
+                        MAX_LENGTH_USERNAME)
 
 
 class User(AbstractUser):

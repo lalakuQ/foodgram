@@ -1,17 +1,22 @@
-from django.db import IntegrityError
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator, ValidationError
-from django.core.validators import MinValueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from rest_framework.validators import UniqueTogetherValidator
-from recipes.models import User, Follower, Ingredient, Recipe, Tag, Unit, RecipeIngredient, UserRecipe, RecipeTag
-from recipes.constants import MAX_LENGTH_USERNAME, MAX_LENGTH_EMAIL
-from .utils import decode_img, create_recipe_ingredients
-from recipes.validators import validate_username
+from django.core.validators import MinValueValidator
+from recipes.constants import (MAX_LENGTH_EMAIL,
+                               MAX_LENGTH_USERNAME,
+                               MIN_VALUE_COOKING_TIME)
+from recipes.models import (Follower, Ingredient, Recipe, RecipeIngredient,
+                            Tag, User, UserRecipe)
+from rest_framework import serializers
+from rest_framework.validators import (UniqueValidator, ValidationError)
+
+from .utils import create_recipe_ingredients, decode_img
 
 
 class UserSerializer(serializers.ModelSerializer):
-
+    email = serializers.EmailField(
+        max_length=MAX_LENGTH_EMAIL,
+        validators=[UnicodeUsernameValidator(),
+                    UniqueValidator(queryset=User.objects.all())],
+    )
     username = serializers.CharField(
         max_length=MAX_LENGTH_USERNAME,
         validators=[UnicodeUsernameValidator(),
@@ -83,8 +88,10 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
     )
-    amount = serializers.DecimalField(max_digits=5, decimal_places=2,
-                                      validators=[MinValueValidator(1)])
+    amount = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)])
 
     class Meta:
         model = RecipeIngredient
@@ -122,6 +129,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
     cooking_time = serializers.IntegerField(
         validators=[MinValueValidator(1)]
     )
+
     def create(self, validated_data):
         user = self.context['request'].user
         img_data = validated_data.pop('image')

@@ -1,8 +1,6 @@
-
-from datetime import datetime
-
-from django.core.exceptions import ValidationError
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.exceptions import ValidationError
+
 
 def validate_username(value):
     """Проверяет корректность значения username."""
