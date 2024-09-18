@@ -5,6 +5,7 @@ import io
 import os
 from django.core.files.base import ContentFile
 from rest_framework import status
+from django.http import HttpResponse, Http404
 from recipes.models import RecipeIngredient, ShortUrl, RecipeTag
 from rest_framework.response import Response
 from recipes.constants import MAX_LENGTH_SHORTCODE
@@ -87,14 +88,14 @@ def save_recipes_to_text_file(recipes):
                     'amount': recipe_ing.amount,
                     'unit': ing.unit.name
                 }
-    output = io.StringIO(newline='')
+    output = io.StringIO(newline='\n')
     output.write('Ингредиенты:' + '\n')
     for ing_name, data in recipe_dict.items():
         output.write(f"{ing_name}: {data['amount']} ({data['unit']})\n")
 
     output.seek(0)
 
-    response = Response(output.read(), content_type='text/plain')
+    response = HttpResponse(output.read(), content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=recipes.txt'
 
     return response
