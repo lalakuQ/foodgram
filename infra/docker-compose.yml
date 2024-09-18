@@ -8,10 +8,11 @@ services:
   db:
     image: postgres:13.10
     env_file:
-      - ../.env/
+      - ../.env
     volumes:
       - pg_data:/var/lib/postgresql/pg_data
-
+    ports:
+      - 5432:5432
   backend:
     build: ../backend/
     env_file:
