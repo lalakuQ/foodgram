@@ -19,6 +19,8 @@ class RecipeFilter(django_filters.FilterSet):
 
     def filter_user_recipe(self, queryset, value, field, name=None):
         user = self.request.user
+        if not user.is_authenticated:
+            return queryset
         for recipe in queryset:
             UserRecipe.objects.get_or_create(
                 recipe=recipe,
@@ -33,15 +35,11 @@ class RecipeFilter(django_filters.FilterSet):
         return queryset
 
     def filter_is_favorite(self, queryset, name, value):
-        if not self.request.user.is_authenticated:
-            return queryset
         return self.filter_user_recipe(queryset,
                                        value,
                                        field='is_favorite')
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
-        if not self.request.user.is_authenticated:
-            return queryset
         return self.filter_user_recipe(queryset,
                                        value,
                                        field='is_in_shopping_cart')
