@@ -12,6 +12,7 @@ router.register('tags', TagViewSet, basename='tags')
 router.register('recipes', RecipesViewSet, basename='recipes')
 router.register('ingredients', IngredientViewSet, basename='ingredients')
 
+app_name = 'api'
 
 urlpatterns = [
     path('auth/token/login/', CustomTokenCreateView.as_view(),

@@ -26,7 +26,6 @@ class CustomTokenCreateView(TokenCreateView,):
     def post(self, request, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-
         if email and password:
             user = authenticate(request, email=email, password=password)
             if user:
