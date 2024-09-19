@@ -33,7 +33,7 @@ services:
 
   nginx:
     container_name: foodgram-nginx
-    image: ../nginx
+    build: ../nginx
     ports:
       - 80:80
     volumes:
