@@ -1,7 +1,10 @@
 from django.contrib import admin
+from django.db.models import Count, OuterRef, Subquery
 
 from .models import (Follower, Ingredient, Recipe, RecipeIngredient, Tag, Unit,
-                     User)
+                     User, UserRecipe)
+
+admin.site.empty_value_display = 'Не задано'
 
 
 @admin.register(User)
@@ -10,14 +13,29 @@ class UserAdmin(admin.ModelAdmin):
         'username',
         'first_name',
         'last_name',
+        'email'
     )
+    list_editable = (
+        'username',
+        'first_name',
+        'last_name',
+        'email'
+    )
+    search_fields = (
+        'email',
+        'username'
+    )
+    list_display_links = None
 
 
 @admin.register(Follower)
 class FollowerAdmin(admin.ModelAdmin):
     list_display = (
         'user',
+        'following_user',
+        'is_subscribed'
     )
+    list_display_links = ('user', 'following_user')
 
 
 @admin.register(Ingredient)
@@ -26,14 +44,21 @@ class IngredientAdmin(admin.ModelAdmin):
         'name',
         'unit',
     )
+    list_editable = list_display
+    search_fields = (
+        'name',
+    )
+    list_display_links = None
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
+    list_display_links = None
     list_display = (
         'name',
         'slug',
     )
+    list_editable = list_display
 
 
 @admin.register(Unit)
@@ -41,6 +66,8 @@ class UnitAdmin(admin.ModelAdmin):
     list_display = (
         'name',
     )
+    list_editable = list_display
+    list_display_links = None
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -51,5 +78,20 @@ class RecipeIngredientInline(admin.TabularInline):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     inlines = [RecipeIngredientInline]
-    list_display = ('name', 'author', 'cooking_time')
-    search_fields = ('name', 'author__username', 'author__email')
+    list_display = ('name', 'author', 'is_favorite_count')
+    search_fields = ('name', 'author__username')
+    list_filter = (
+        'tags__name',
+    )
+
+    def is_favorite_count(self, obj):
+        return obj.is_favorite_count
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            is_favorite_count=Count(Subquery(UserRecipe.objects.filter(
+                recipe=OuterRef('id'), is_favorite=True).values('recipe'))
+            )
+        )
+        return queryset

@@ -87,9 +87,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
     )
-    amount = serializers.DecimalField(
-        max_digits=5,
-        decimal_places=2,
+    amount = serializers.IntegerField(
         validators=[MinValueValidator(MIN_VALUE_COOKING_TIME)])
 
     class Meta:
