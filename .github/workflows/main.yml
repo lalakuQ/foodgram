@@ -142,6 +142,7 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
+        command_timeout: 200m
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
           cd foodgram/infra
