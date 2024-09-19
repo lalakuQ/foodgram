@@ -16,9 +16,8 @@ from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 from .serializers import (FollowerSerializer, IngredientSerializer,
-                          RecipeGetSerializer,
-                          RecipePostSerializer, RecipeSerializer,
-                          TagSerializer, UserSerializer)
+                          RecipeGetSerializer, RecipePostSerializer,
+                          RecipeSerializer, TagSerializer, UserSerializer)
 from .utils import decode_img, save_recipes_to_text_file, shorten_url
 
 
