@@ -1,8 +1,8 @@
 version: '3.3'
 volumes:
-  pg_data_production:
+  pg_data:
   static:
-  media_production:
+  media:
 
 services:
   db:
@@ -10,7 +10,7 @@ services:
     env_file:
       - ../.env
     volumes:
-      - pg_data_production:/var/lib/postgresql/pg_data
+      - pg_data:/var/lib/postgresql/pg_data
     ports:
       - 5432:5432
   backend:
@@ -21,7 +21,7 @@ services:
       - db
     volumes:
       - static:/backend_static
-      - media_production:/app/media
+      - media:/app/media
 
   frontend:
     container_name: foodgram-front
@@ -38,4 +38,4 @@ services:
       - 80:80
     volumes:
       - static:/usr/share/nginx/html
-      - media_production:/app/media
+      - media:/app/media

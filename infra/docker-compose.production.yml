@@ -35,7 +35,7 @@ services:
     container_name: foodgram-nginx
     image: lalaku/foodgram_proxy
     ports:
-      - 80:80
+      - 10000:80
     volumes:
       - static:/usr/share/nginx/html
       - media_production:/app/media
