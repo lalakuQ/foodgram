@@ -1,0 +1,41 @@
+version: '3.3'
+volumes:
+  pg_data_production:
+  static:
+  media_production:
+
+services:
+  db:
+    image: postgres:13.10
+    env_file:
+      - ../.env
+    volumes:
+      - pg_data_production:/var/lib/postgresql/pg_data
+    ports:
+      - 5432:5432
+  backend:
+    image: lalaku/foodgram_backend
+    env_file:
+      - ../.env
+    depends_on:
+      - db
+    volumes:
+      - static:/backend_static
+      - media_production:/app/media
+
+  frontend:
+    container_name: foodgram-front
+    image: lalaku/foodgram_frontend
+    command: cp -r /app/build/. /frontend_static/
+    volumes:
+      - ../frontend/:/app/result_build/
+      - static:/frontend_static
+
+  nginx:
+    container_name: foodgram-nginx
+    image: lalaku/foodgram_proxy
+    ports:
+      - 80:80
+    volumes:
+      - static:/usr/share/nginx/html
+      - media_production:/app/media
