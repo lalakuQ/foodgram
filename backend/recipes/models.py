@@ -77,6 +77,7 @@ class Unit(TagIngredientUnit):
 
 
 class Recipe(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User,
                                related_name='recipes',
                                on_delete=models.CASCADE)
@@ -96,6 +97,9 @@ class Recipe(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    class Meta:
+        ordering = ['-created_at']
 
 
 class RecipeTag(models.Model):
