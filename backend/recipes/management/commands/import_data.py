@@ -3,8 +3,7 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from recipes.models import (Ingredient, Unit)
-
+from recipes.models import Ingredient, Unit
 
 DIR_PATH = os.path.join(settings.BASE_DIR, 'data')
 FILES_PATH = {
