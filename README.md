@@ -28,6 +28,7 @@ docker compose -f docker-compose.production.yml up --build
 
 ## Информация:
 https://foodgram-yandex123.zapto.org/
+
 Юзернейм админа/Пароль - admin/admin
 
 ## Авторы проекта:
