@@ -49,7 +49,7 @@ class RecipeFilter(django_filters.FilterSet):
         fields = ['is_favorited',
                   'is_in_shopping_cart',
                   'author',
-                  'tags',]
+                  'tags', ]
 
 
 class IngredientFilter(django_filters.FilterSet):
