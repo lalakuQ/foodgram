@@ -4,11 +4,13 @@ import random
 import string
 
 from django.core.files.base import ContentFile
+from rest_framework.generics import get_object_or_404
 from django.http import HttpResponse
 from recipes.constants import MAX_LENGTH_SHORTCODE
-from recipes.models import RecipeIngredient, RecipeTag, ShortUrl
+from recipes.models import Recipe, RecipeIngredient, RecipeTag, ShortUrl, UserRecipe
 
-
+from rest_framework.response import Response
+from rest_framework import status
 def decode_img(img_data, user):
     format, imgstr = img_data.split(';base64,')
     ext = format.split('/')[-1]
@@ -97,3 +99,51 @@ def save_recipes_to_text_file(recipes):
     response['Content-Disposition'] = 'attachment; filename=recipes.txt'
 
     return response
+
+
+def favorite_recipe_shopping_cart(request, pk, is_favorite=False,
+                                  is_shopping_cart=False):
+    from api.serializers import RecipeGetSerializer
+    recipe = get_object_or_404(
+        Recipe,
+        pk=pk
+    )
+    try:
+        user = request.user
+        user_recipe, created = UserRecipe.objects.get_or_create(
+            recipe=recipe,
+            user=user,
+        )
+        if is_favorite:
+            field = user_recipe.is_favorite
+            attibute = 'is_favorite'
+            err_no_obj = 'Рецепт не находится в ваших избранных'
+            err_already_obj = 'Рецепт уже находится в избранных'
+        else:
+            field = user_recipe.is_in_shopping_cart
+            attibute = 'is_in_shopping_cart'
+            err_no_obj = 'Рецепт не находится в вашей корзине'
+            err_already_obj = 'Рецепт уже находится в корзине'
+        if request.method == 'DELETE':
+            if field is True:
+                setattr(user_recipe,
+                        attibute,
+                        False)
+                user_recipe.save()
+                return Response(
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            raise Exception(err_no_obj)
+        if field is True:
+            raise Exception(err_already_obj)
+        setattr(user_recipe, attibute, True)
+        user_recipe.save()
+        obj = RecipeGetSerializer(recipe).data
+        return Response(
+            obj,
+            status=status.HTTP_201_CREATED
+        )
+    except Exception as e:
+        return Response({
+            'errors': str(e),
+        }, status=status.HTTP_400_BAD_REQUEST)

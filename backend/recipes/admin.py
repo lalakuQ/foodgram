@@ -1,10 +1,13 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.db.models import Count, OuterRef, Subquery
 
 from .models import (Follower, Ingredient, Recipe, RecipeIngredient, Tag, Unit,
-                     User, UserRecipe)
+                     UserRecipe)
 
 admin.site.empty_value_display = 'Не задано'
+
+User = get_user_model()
 
 
 @admin.register(User)

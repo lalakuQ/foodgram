@@ -1,13 +1,16 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MinValueValidator
 from recipes.constants import (MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME,
                                MIN_VALUE_COOKING_TIME)
 from recipes.models import (Follower, Ingredient, Recipe, RecipeIngredient,
-                            Tag, User, UserRecipe)
+                            Tag, UserRecipe)
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator, ValidationError
 
 from .utils import create_recipe_ingredients, decode_img
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -222,7 +225,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = '__all__'
+        exclude = ('created_at',)
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):

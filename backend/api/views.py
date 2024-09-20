@@ -1,9 +1,9 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.http import HttpResponseRedirect
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import TokenCreateView
-from recipes.models import (Follower, Ingredient, Recipe, ShortUrl, Tag, User,
+from recipes.models import (Follower, Ingredient, Recipe, ShortUrl, Tag,
                             UserRecipe)
 from rest_framework import mixins, status, viewsets
 from rest_framework.authtoken.models import Token
@@ -18,7 +18,9 @@ from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 from .serializers import (FollowerSerializer, IngredientSerializer,
                           RecipeGetSerializer, RecipePostSerializer,
                           RecipeSerializer, TagSerializer, UserSerializer)
-from .utils import decode_img, save_recipes_to_text_file, shorten_url
+from .utils import decode_img, save_recipes_to_text_file, shorten_url, favorite_recipe_shopping_cart
+
+User = get_user_model()
 
 
 class CustomTokenCreateView(TokenCreateView,):
@@ -167,38 +169,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         url_path='favorite'
     )
     def favorite_recipe(self, request, pk):
-        recipe = get_object_or_404(
-            Recipe,
-            pk=pk
-        )
-        try:
-            user = request.user
-            user_recipe, created = UserRecipe.objects.get_or_create(
-                recipe=recipe,
-                user=user,
-            )
-            is_favorite = user_recipe.is_favorite
-            if request.method == 'DELETE':
-                if is_favorite is True:
-                    user_recipe.is_favorite = False
-                    user_recipe.save()
-                    return Response(
-                        status=status.HTTP_204_NO_CONTENT
-                    )
-                raise Exception('Рецепт не находится в ваших избранных')
-            if is_favorite is True:
-                raise Exception('Рецепт уже находится в избранных')
-            user_recipe.is_favorite = True
-            user_recipe.save()
-            obj = RecipeGetSerializer(recipe).data
-            return Response(
-                obj,
-                status=status.HTTP_201_CREATED
-            )
-        except Exception as e:
-            return Response({
-                'errors': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
+        return favorite_recipe_shopping_cart(request,
+                                             pk,
+                                             is_favorite=True)
 
     @action(
         methods=['GET'],
@@ -247,38 +220,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         url_path='shopping_cart',
     )
     def recipe_shopping_cart(self, request, pk):
-        recipe = get_object_or_404(
-            Recipe,
-            pk=pk
-        )
-        try:
-            user = request.user
-            user_recipe, created = UserRecipe.objects.get_or_create(
-                recipe=recipe,
-                user=user,
-            )
-            is_in_shopping_cart = user_recipe.is_in_shopping_cart
-            if request.method == 'DELETE':
-                if is_in_shopping_cart is True:
-                    user_recipe.is_in_shopping_cart = False
-                    user_recipe.save()
-                    return Response(
-                        status=status.HTTP_204_NO_CONTENT
-                    )
-                raise Exception('Рецепт не находится в вашей корзине')
-            if is_in_shopping_cart is True:
-                raise Exception('Рецепт уже находится в корзине')
-            user_recipe.is_in_shopping_cart = True
-            user_recipe.save()
-            obj = RecipeGetSerializer(recipe).data
-            return Response(
-                obj,
-                status=status.HTTP_201_CREATED
-            )
-        except Exception as e:
-            return Response({
-                'errors': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
+        return favorite_recipe_shopping_cart(request,
+                                             pk,
+                                             is_shopping_cart=True)
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH']:
