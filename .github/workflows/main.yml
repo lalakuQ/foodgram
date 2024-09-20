@@ -128,6 +128,9 @@ jobs:
         echo DB_NAME=${{ secrets.DB_NAME }} >> .env
         echo DB_HOST=${{ secrets.DB_HOST }} >> .env
         echo DB_PORT=${{ secrets.DB_PORT }} >> .env
+        echo DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} >> .env
+        echo DEBUG=${{ secrets.DEBUG }} >> .env
+        echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
 
     - name: Upload .env file
       uses: appleboy/scp-action@master
