@@ -3,8 +3,7 @@ from django.http import HttpResponseRedirect
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import TokenCreateView
-from recipes.models import (Follower, Ingredient, Recipe, ShortUrl, Tag,
-                            UserRecipe)
+from recipes.models import (Follower, Ingredient, Recipe, ShortUrl, Tag,)
 from rest_framework import mixins, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -16,9 +15,10 @@ from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthenticatedAuthorSuperuserOrReadOnly
 from .serializers import (FollowerSerializer, IngredientSerializer,
-                          RecipeGetSerializer, RecipePostSerializer,
+                          RecipePostSerializer,
                           RecipeSerializer, TagSerializer, UserSerializer)
-from .utils import decode_img, save_recipes_to_text_file, shorten_url, favorite_recipe_shopping_cart
+from .utils import (decode_img, favorite_recipe_shopping_cart,
+                    save_recipes_to_text_file, shorten_url)
 
 User = get_user_model()
 

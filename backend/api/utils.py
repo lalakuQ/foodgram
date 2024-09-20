@@ -4,13 +4,15 @@ import random
 import string
 
 from django.core.files.base import ContentFile
-from rest_framework.generics import get_object_or_404
 from django.http import HttpResponse
 from recipes.constants import MAX_LENGTH_SHORTCODE
-from recipes.models import Recipe, RecipeIngredient, RecipeTag, ShortUrl, UserRecipe
-
-from rest_framework.response import Response
+from recipes.models import (Recipe, RecipeIngredient, RecipeTag, ShortUrl,
+                            UserRecipe)
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+
+
 def decode_img(img_data, user):
     format, imgstr = img_data.split(';base64,')
     ext = format.split('/')[-1]

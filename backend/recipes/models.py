@@ -2,8 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.urls import reverse
 
-from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SHORTCODE,
-                        MAX_LENGTH_SLUG)
+from .constants import MAX_LENGTH_NAME, MAX_LENGTH_SHORTCODE, MAX_LENGTH_SLUG
 
 User = get_user_model()
 
