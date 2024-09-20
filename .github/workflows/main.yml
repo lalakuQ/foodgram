@@ -154,7 +154,7 @@ jobs:
           cd foodgram/infra
           sudo docker compose -f docker-compose.production.yml stop
           sudo docker compose -f docker-compose.production.yml rm backend
-          sudo docker image rm lalaku/foodgram_backend
+          sudo docker image rm --force lalaku/foodgram_backend
           sudo docker compose -f docker-compose.production.yml up --build -d
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
